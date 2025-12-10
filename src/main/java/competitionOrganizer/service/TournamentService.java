@@ -1,6 +1,7 @@
 package competitionOrganizer.service;
 
 import competitionOrganizer.dto.FighterResponseDto;
+import competitionOrganizer.dto.FightResultDto;
 import competitionOrganizer.model.HitLocation;
 import competitionOrganizer.model.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +136,31 @@ public class TournamentService {
             System.out.println(first.getName() + " ударив в " + hitLocation.getDisplayName() + " промахнулся");
         }
         return second;
+    }
+
+    public FightResultDto fight2WithResult(FighterResponseDto.Fighter attacker, FighterResponseDto.Fighter victim, HitLocation hitLocation) {
+        int damage = hitDamage(attacker, hitLocation);
+        boolean hitSuccessful = dodgeChance(victim);
+        String logMessage;
+        
+        if (hitSuccessful) {
+            int newHp = victim.getHeilsFighters() - damage;
+            victim.setHeilsFighters(newHp);
+            logMessage = victim.getName() + " пропустил удар в " + hitLocation.getDisplayName() + 
+                        ", нанесено " + damage + " урона. У " + victim.getName() + " осталось " + newHp + " HP";
+        } else {
+            logMessage = attacker.getName() + " ударив в " + hitLocation.getDisplayName() + " промахнулся";
+        }
+        
+        return new FightResultDto(
+            attacker,
+            victim,
+            hitLocation,
+            damage,
+            hitSuccessful,
+            victim.getHeilsFighters(),
+            logMessage
+        );
     }
 
 }

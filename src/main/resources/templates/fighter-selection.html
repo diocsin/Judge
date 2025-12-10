@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор бойцов</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .fighters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        .fighter-card {
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .fighter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .fighter-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15), 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .fighter-card:hover::before {
+            transform: scaleX(1);
+        }
+        .fighter-card.selected-first {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e9 100%);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+        }
+        .fighter-card.selected-second {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+        }
+        .fighter-card h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.5em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .fighter-info {
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .fighter-info:last-child {
+            border-bottom: none;
+        }
+        .fighter-info strong {
+            color: #555;
+            font-weight: 600;
+        }
+        .fighter-info span {
+            color: #333;
+            font-weight: 500;
+        }
+        .fighter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .select-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .select-btn.first {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+        .select-btn.first:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+        }
+        .select-btn.first.selected {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.5);
+        }
+        .select-btn.second {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+        .select-btn.second:hover {
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+        }
+        .select-btn.second.selected {
+            background: linear-gradient(135deg, #1565C0 0%, #0d47a1 100%);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.5);
+        }
+        .selection-form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .selected-fighters {
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+        }
+        .selected-fighters h3 {
+            margin-top: 0;
+            color: #2e7d32;
+            font-size: 1.3em;
+        }
+        .selected-fighter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+        .selected-fighter-item strong {
+            color: #555;
+        }
+        .selected-fighter-item span {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        .start-fight-btn {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            padding: 18px 50px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(244, 67, 54, 0.3);
+        }
+        .start-fight-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(244, 67, 54, 0.4);
+        }
+        .start-fight-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .error {
+            color: #d32f2f;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f44336;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .badge.first {
+            background: #4CAF50;
+            color: white;
+        }
+        .badge.second {
+            background: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Выбор бойцов для боя</h1>
+    
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+    
+    <form id="selectionForm" method="post" action="/start-fight">
+        <input type="hidden" name="firstId" id="firstIdInput">
+        <input type="hidden" name="secondId" id="secondIdInput">
+        
+        <div class="fighters-container">
+            <div th:each="fighter : ${fighters}" class="fighter-card" th:attr="data-fighter-id=${fighter.id}">
+                <h3>
+                    <span th:text="${fighter.name}">Имя бойца</span>
+                    <span class="badge first" style="display: none;" id="badge-first-${fighter.id}">Боец 1</span>
+                    <span class="badge second" style="display: none;" id="badge-second-${fighter.id}">Боец 2</span>
+                </h3>
+                <div class="fighter-info">
+                    <strong>Возраст:</strong> 
+                    <span th:text="${fighter.age}"></span>
+                </div>
+                <div class="fighter-info">
+                    <strong>Сила:</strong> 
+                    <span th:text="${fighter.power}"></span>
+                </div>
+                <div class="fighter-info">
+                    <strong>Пояс:</strong> 
+                    <span th:text="${fighter.beltColorFighter}"></span>
+                </div>
+                <div class="fighter-info">
+                    <strong>Шанс уклонения:</strong> 
+                    <span th:text="${#numbers.formatDecimal(fighter.dodgeChance, 1, 2)}"></span>
+                </div>
+                <div class="fighter-info">
+                    <strong>HP:</strong> 
+                    <span th:text="${fighter.heilsFighters}"></span>
+                </div>
+                <div class="fighter-buttons">
+                    <button type="button" class="select-btn first" th:attr="data-fighter-id=${fighter.id}" onclick="selectFighter(this, 'first')">
+                        Выбрать как Боец 1
+                    </button>
+                    <button type="button" class="select-btn second" th:attr="data-fighter-id=${fighter.id}" onclick="selectFighter(this, 'second')">
+                        Выбрать как Боец 2
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="selection-form">
+            <div class="selected-fighters">
+                <h3>Выбранные бойцы:</h3>
+                <div class="selected-fighter-item">
+                    <strong>Боец 1:</strong> 
+                    <span id="selectedFirst">Не выбран</span>
+                </div>
+                <div class="selected-fighter-item">
+                    <strong>Боец 2:</strong> 
+                    <span id="selectedSecond">Не выбран</span>
+                </div>
+            </div>
+            <button type="submit" class="start-fight-btn" id="startFightBtn" disabled>Начать бой</button>
+        </div>
+    </form>
+    
+    <script>
+        // Собираем информацию о бойцах из DOM
+        function getFightersData() {
+            const fighters = [];
+            document.querySelectorAll('.fighter-card').forEach(card => {
+                const id = parseInt(card.getAttribute('data-fighter-id'));
+                const name = card.querySelector('h3 span').textContent.trim();
+                fighters.push({ id: id, name: name });
+            });
+            return fighters;
+        }
+        
+        const fighters = getFightersData();
+        
+        let selectedFirstId = null;
+        let selectedSecondId = null;
+        
+        function selectFighter(button, position) {
+            const fighterIdStr = button.getAttribute('data-fighter-id');
+            const fighterId = parseInt(fighterIdStr);
+            
+            if (isNaN(fighterId)) {
+                console.error('Не удалось получить ID бойца');
+                return;
+            }
+            
+            // Получаем имя бойца из карточки
+            const card = button.closest('.fighter-card');
+            const fighterName = card.querySelector('h3 span').textContent.trim();
+            
+            if (position === 'first') {
+                // Снимаем выделение с предыдущего первого бойца
+                if (selectedFirstId) {
+                    const prevCard = document.querySelector(`[data-fighter-id="${selectedFirstId}"]`);
+                    if (prevCard) {
+                        prevCard.classList.remove('selected-first');
+                        const prevBadge = prevCard.querySelector('#badge-first-' + selectedFirstId);
+                        if (prevBadge) prevBadge.style.display = 'none';
+                        const prevButtons = prevCard.querySelectorAll('.select-btn.first');
+                        prevButtons.forEach(btn => btn.classList.remove('selected'));
+                    }
+                }
+                
+                // Если тот же боец выбран как второй, снимаем выбор второго
+                if (selectedSecondId == fighterId) {
+                    selectedSecondId = null;
+                    card.classList.remove('selected-second');
+                    const badge = card.querySelector('#badge-second-' + fighterId);
+                    if (badge) badge.style.display = 'none';
+                    const secondButtons = card.querySelectorAll('.select-btn.second');
+                    secondButtons.forEach(btn => btn.classList.remove('selected'));
+                    const selectedSecondEl = document.getElementById('selectedSecond');
+                    if (selectedSecondEl) selectedSecondEl.textContent = 'Не выбран';
+                    const secondIdInput = document.getElementById('secondIdInput');
+                    if (secondIdInput) secondIdInput.value = '';
+                }
+                
+                selectedFirstId = fighterId;
+                card.classList.add('selected-first');
+                const badge = card.querySelector('#badge-first-' + fighterId);
+                if (badge) badge.style.display = 'inline-block';
+                button.classList.add('selected');
+                
+                const selectedFirstEl = document.getElementById('selectedFirst');
+                if (selectedFirstEl) selectedFirstEl.textContent = fighterName;
+                const firstIdInput = document.getElementById('firstIdInput');
+                if (firstIdInput) firstIdInput.value = fighterId;
+            } else {
+                // Снимаем выделение с предыдущего второго бойца
+                if (selectedSecondId) {
+                    const prevCard = document.querySelector(`[data-fighter-id="${selectedSecondId}"]`);
+                    if (prevCard) {
+                        prevCard.classList.remove('selected-second');
+                        const prevBadge = prevCard.querySelector('#badge-second-' + selectedSecondId);
+                        if (prevBadge) prevBadge.style.display = 'none';
+                        const prevButtons = prevCard.querySelectorAll('.select-btn.second');
+                        prevButtons.forEach(btn => btn.classList.remove('selected'));
+                    }
+                }
+                
+                // Если тот же боец выбран как первый, снимаем выбор первого
+                if (selectedFirstId == fighterId) {
+                    selectedFirstId = null;
+                    card.classList.remove('selected-first');
+                    const badge = card.querySelector('#badge-first-' + fighterId);
+                    if (badge) badge.style.display = 'none';
+                    const firstButtons = card.querySelectorAll('.select-btn.first');
+                    firstButtons.forEach(btn => btn.classList.remove('selected'));
+                    const selectedFirstEl = document.getElementById('selectedFirst');
+                    if (selectedFirstEl) selectedFirstEl.textContent = 'Не выбран';
+                    const firstIdInput = document.getElementById('firstIdInput');
+                    if (firstIdInput) firstIdInput.value = '';
+                }
+                
+                selectedSecondId = fighterId;
+                card.classList.add('selected-second');
+                const badge = card.querySelector('#badge-second-' + fighterId);
+                if (badge) badge.style.display = 'inline-block';
+                button.classList.add('selected');
+                
+                const selectedSecondEl = document.getElementById('selectedSecond');
+                if (selectedSecondEl) selectedSecondEl.textContent = fighterName;
+                const secondIdInput = document.getElementById('secondIdInput');
+                if (secondIdInput) secondIdInput.value = fighterId;
+            }
+            
+            // Проверяем, можно ли начать бой
+            const startBtn = document.getElementById('startFightBtn');
+            if (startBtn) {
+                if (selectedFirstId && selectedSecondId && selectedFirstId !== selectedSecondId) {
+                    startBtn.disabled = false;
+                } else {
+                    startBtn.disabled = true;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
